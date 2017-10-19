@@ -52,10 +52,13 @@ class FullNet(nn.Module):
         super(FullNet, self).__init__()
         self.bn_input = nn.BatchNorm1d(10, momentum=0.5)
         self.fc1 = nn.Linear(10, 20)
+        self.relu1 = nn.ReLU()
         self.bn2 = nn.BatchNorm1d(20, momentum=0.5)
         self.fc2 = nn.Linear(20, 30)
+        self.relu2 = nn.ReLU()
         self.bn3 = nn.BatchNorm1d(30, momentum=0.5)
         self.fc3 = nn.Linear(30, 10)
+        self.relu3 = nn.ReLU()
         self.bn4 = nn.BatchNorm1d(10, momentum=0.5)
         self.fc4 = nn.Linear(10, 2)
 
@@ -66,18 +69,45 @@ class FullNet(nn.Module):
         :return:
         '''
         # x = self.bn_input(x)
-        x = F.relu(self.fc1(x))
+        x = (self.fc1(x))
         # x = self.bn2(x)
         # x = F.dropout(x, training=True)
-        x = F.relu(self.fc2(x))
+        x = (self.fc2(x))
         # x = self.bn3(x)
         # x = F.dropout(x, training=True)
-        x = F.relu(self.fc3(x))
+        x = (self.fc3(x))
         # x = self.bn4(x)
         # x = F.dropout(x, training=True)
         x = self.fc4(x)
         return x
 
+
+class Net(nn.Module):
+    def __init__(self, input_size, hidden_size, num_classes):
+        super(Net, self).__init__()
+        self.fc1 = nn.Linear(input_size, hidden_size)
+        self.relu = nn.ReLU()
+        self.fc2 = nn.Linear(hidden_size, num_classes)
+
+    def forward(self, x):
+        out = self.fc1(x)
+        out = self.relu(out)
+        out = self.fc2(out)
+        return out
+
+
+class Neuralnetwork(nn.Module):
+    def __init__(self, in_dim, n_hidden_1, n_hidden_2, out_dim):
+        super(Neuralnetwork, self).__init__()
+        self.layer1 = nn.Linear(in_dim, n_hidden_1)
+        self.layer2 = nn.Linear(n_hidden_1, n_hidden_2)
+        self.layer3 = nn.Linear(n_hidden_2, out_dim)
+
+    def forward(self, x):
+        x = self.layer1(x)
+        x = self.layer2(x)
+        x = self.layer3(x)
+        return x
 
 if __name__ == '__main__':
     dir_name = '/home/steve/Data/Shad/'
@@ -114,31 +144,52 @@ if __name__ == '__main__':
 
     print(x_train.shape, x_valid.shape, y_train.shape, y_valid.shape)
 
-    x_train = torch.from_numpy(x_train)
-    x_valid = torch.from_numpy(x_valid)
-    y_train = torch.from_numpy(y_train)
-    y_valid = torch.from_numpy(y_valid)
+    x_train = torch.from_numpy(x_train).float()
+    x_valid = torch.from_numpy(x_valid).float()
+    y_train = torch.from_numpy(y_train).float()
+    y_valid = torch.from_numpy(y_valid).float()
 
     train_dataset = TensorDataset(data_tensor=x_train, target_tensor=y_train)
     test_dataset = TensorDataset(data_tensor=x_valid, target_tensor=y_valid)
-    train_loader = DataLoader(train_dataset, batch_size=10, num_workers=4, pin_memory=True)
-    test_dataset = DataLoader(test_dataset, batch_size=10, num_workers=4, pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=10, num_workers=4)
+    test_dataset = DataLoader(test_dataset, batch_size=10, num_workers=4)
 
     # train_dataloader = DataLoader()
 
-    fullNet = FullNet()
+    fullNet = nn.Sequential(
+        nn.Linear(10,30),
+        nn.ReLU(),
+        nn.Linear(30,30),
+        nn.ReLU(),
+        nn.Linear(30,30),
+        nn.ReLU(),
+        nn.Linear(30,20),
+        nn.ReLU(),
+        nn.Linear(20,10),
+        nn.ReLU(),
+        nn.Linear(10,2)
+    )
     fullNet.cuda()
+    print(fullNet)
 
+    # optimization = torch.optim.SGD(fullNet.parameters(),lr=0.001)
     optimization = torch.optim.Adam(fullNet.parameters())
     loss_func = torch.nn.MSELoss()
-    for epoch in range(4):
+    running_loss = 0.0
+    for epoch in range(10):
 
         print('Epoch:', epoch)
-        for step,(bx, by )in enumerate(train_loader):
-            bx, by = Variable(bx), Variable(by)
-            print(bx)
+        for step,(bx, by ) in enumerate(train_loader):
+            bx, by = Variable(bx).cuda(), Variable(by).cuda()
+            # print(bx)
+            # print(by)
             pred = fullNet(bx)
             loss = loss_func(pred, by)
             optimization.zero_grad()
             loss.backward()
             optimization.step()
+
+            running_loss += loss.data[0]
+            if step % 200 == 199:
+                print('%d,%5d] loss: %.3f'%(epoch+1,step+1,running_loss / 200))
+                running_loss = 0.0

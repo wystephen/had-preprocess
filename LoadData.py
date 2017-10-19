@@ -65,16 +65,16 @@ class FullNet(nn.Module):
         :param x:
         :return:
         '''
-        x = self.bn_input(x)
+        # x = self.bn_input(x)
         x = F.relu(self.fc1(x))
-        x = self.bn2(x)
-        x = F.dropout(x, training=True)
+        # x = self.bn2(x)
+        # x = F.dropout(x, training=True)
         x = F.relu(self.fc2(x))
-        x = self.bn3(x)
-        x = F.dropout(x, training=True)
+        # x = self.bn3(x)
+        # x = F.dropout(x, training=True)
         x = F.relu(self.fc3(x))
-        x = self.bn4(x)
-        x = F.dropout(x, training=True)
+        # x = self.bn4(x)
+        # x = F.dropout(x, training=True)
         x = self.fc4(x)
         return x
 
@@ -91,12 +91,17 @@ if __name__ == '__main__':
     x = x_file['X_temp']
     y = x_file['Y_temp']
 
+
+
     x = x.transpose()
     y = y.transpose()
+
+    x = x[:,:10]
 
     print(x.shape, type(x))
     print(y.shape, type(y))
 
+    x = x.astype(np.float)
     y = y.astype(np.float)
 
     print('x', x[10, :])
@@ -129,8 +134,9 @@ if __name__ == '__main__':
     for epoch in range(4):
 
         print('Epoch:', epoch)
-        for bx, by in enumerate(train_loader):
+        for step,(bx, by )in enumerate(train_loader):
             bx, by = Variable(bx), Variable(by)
+            print(bx)
             pred = fullNet(bx)
             loss = loss_func(pred, by)
             optimization.zero_grad()

@@ -46,6 +46,8 @@ from torch.utils.data import TensorDataset
 import numpy as np
 import matplotlib.pyplot as plt
 
+from logger import Logger
+
 
 class FullNet(nn.Module):
     def __init__(self):
@@ -109,7 +111,15 @@ class Neuralnetwork(nn.Module):
         x = self.layer3(x)
         return x
 
+
 if __name__ == '__main__':
+
+    ''' 
+    initial logger
+    '''
+    import time
+    logger = Logger('./logs'+ time.strftime("%Y-%m-%d-%H:%M:%S",time.localtime())+'/')
+
     dir_name = '/home/steve/Data/Shad/'
 
     # x_file = sio.loadmat(dir_name+'Mill_500_25.mat')
@@ -121,12 +131,10 @@ if __name__ == '__main__':
     x = x_file['X_temp']
     y = x_file['Y_temp']
 
-
-
     x = x.transpose()
     y = y.transpose()
 
-    x = x[:,:10]
+    x = x[:, :10]
 
     print(x.shape, type(x))
     print(y.shape, type(y))
@@ -157,29 +165,39 @@ if __name__ == '__main__':
     # train_dataloader = DataLoader()
 
     fullNet = nn.Sequential(
-        nn.Linear(10,30),
+        nn.BatchNorm1d(10),
+        nn.Linear(10, 30),
         nn.ReLU(),
-        nn.Linear(30,30),
+        nn.BatchNorm1d(30),
+        nn.Linear(30, 50),
         nn.ReLU(),
-        nn.Linear(30,30),
+        nn.BatchNorm1d(50),
+        nn.Linear(50, 30),
         nn.ReLU(),
-        nn.Linear(30,20),
+        nn.BatchNorm1d(30),
+        nn.Linear(30, 20),
         nn.ReLU(),
-        nn.Linear(20,10),
+        nn.BatchNorm1d(20),
+        nn.Linear(20, 10),
         nn.ReLU(),
-        nn.Linear(10,2)
+        nn.Linear(10, 2)
     )
     fullNet.cuda()
     print(fullNet)
+
+    # x_test = torch.from_numpy(x_valid).float()
+    # y_test = torch.from_numpy(y_valid).float()
+    x_test = Variable(x_valid).cuda()
+    y_test = Variable(y_valid).cuda()
 
     # optimization = torch.optim.SGD(fullNet.parameters(),lr=0.001)
     optimization = torch.optim.Adam(fullNet.parameters())
     loss_func = torch.nn.MSELoss()
     running_loss = 0.0
-    for epoch in range(10):
+    for epoch in range(100):
 
         print('Epoch:', epoch)
-        for step,(bx, by ) in enumerate(train_loader):
+        for step, (bx, by) in enumerate(train_loader):
             bx, by = Variable(bx).cuda(), Variable(by).cuda()
             # print(bx)
             # print(by)
@@ -191,5 +209,13 @@ if __name__ == '__main__':
 
             running_loss += loss.data[0]
             if step % 200 == 199:
-                print('%d,%5d] loss: %.3f'%(epoch+1,step+1,running_loss / 200))
+                print('%d,%5d] loss: %.3f' % (epoch + 1, step + 1, running_loss / 200))
+                logger.scalar_summary('loss', running_loss / 200, step + epoch * 7600)
                 running_loss = 0.0
+                pred_test = fullNet(x_test)
+                score = loss_func(pred_test, y_test)
+                logger.scalar_summary('score', score.data[0], step + epoch * 7600)
+
+                error_average = (((pred_test-y_test)/y_test).pow(2.0)).pow(0.5).mean()
+                print(error_average.float()[0])
+                logger.scalar_summary('error_avg',error_average.cpu()[0],step+epoch*7600)

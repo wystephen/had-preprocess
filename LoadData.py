@@ -112,6 +112,9 @@ class Neuralnetwork(nn.Module):
         return x
 
 
+def own_loss_function(pre_y,y):
+    return (((pre_y - y) / y)).abs().mean()
+
 if __name__ == '__main__':
 
     ''' 
@@ -159,28 +162,28 @@ if __name__ == '__main__':
 
     train_dataset = TensorDataset(data_tensor=x_train, target_tensor=y_train)
     test_dataset = TensorDataset(data_tensor=x_valid, target_tensor=y_valid)
-    train_loader = DataLoader(train_dataset, batch_size=10, num_workers=4)
+    train_loader = DataLoader(train_dataset, batch_size=10,shuffle=True, num_workers=4)
     test_dataset = DataLoader(test_dataset, batch_size=10, num_workers=4)
 
     # train_dataloader = DataLoader()
 
     fullNet = nn.Sequential(
         nn.BatchNorm1d(10),
-        nn.Linear(10, 30),
-        nn.ReLU(),
-        nn.BatchNorm1d(30),
-        nn.Linear(30, 50),
-        nn.ReLU(),
-        nn.BatchNorm1d(50),
-        nn.Linear(50, 30),
-        nn.ReLU(),
-        nn.BatchNorm1d(30),
-        nn.Linear(30, 20),
-        nn.ReLU(),
+        nn.Linear(10,20),
+        nn.PReLU(),
         nn.BatchNorm1d(20),
-        nn.Linear(20, 10),
-        nn.ReLU(),
-        nn.Linear(10, 2)
+        nn.Linear(20,20),
+        nn.PReLU(),
+        nn.BatchNorm1d(20),
+        nn.Linear(20,20),
+        nn.PReLU(),
+        nn.BatchNorm1d(20),
+        nn.Linear(20,20),
+        nn.PReLU(),
+        nn.BatchNorm1d(20),
+        nn.Linear(20,10),
+        nn.PReLU(),
+        nn.Linear(10,2)
     )
     fullNet.cuda()
     print(fullNet)
@@ -193,6 +196,7 @@ if __name__ == '__main__':
     # optimization = torch.optim.SGD(fullNet.parameters(),lr=0.001)
     optimization = torch.optim.Adam(fullNet.parameters())
     loss_func = torch.nn.MSELoss()
+    # loss_func = own_loss_function()
     running_loss = 0.0
     for epoch in range(100):
 
@@ -216,6 +220,7 @@ if __name__ == '__main__':
                 score = loss_func(pred_test, y_test)
                 logger.scalar_summary('score', score.data[0], step + epoch * 7600)
 
-                error_average = (((pred_test-y_test)/y_test).pow(2.0)).pow(0.5).mean()
-                print(error_average.float()[0])
-                logger.scalar_summary('error_avg',error_average.cpu()[0],step+epoch*7600)
+                error_average = (((pred_test-y_test)/y_test)).abs().mean()
+                # print(error_average.float().cpu()[0].numpy())
+                logger.scalar_summary('error_avg',error_average.data.cpu().numpy()[0],step+epoch*7600)
+                print('error avg:',error_average.data.cpu().numpy()[0])

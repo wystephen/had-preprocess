@@ -153,6 +153,9 @@ if __name__ == '__main__':
 
     x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.2)
 
+    y_src_mean = y.mean(axis=0)
+    y_src_std = y.std(axis=0)
+
     print(x_train.shape, x_valid.shape, y_train.shape, y_valid.shape)
 
     print('x mean:',x.mean(axis=0))
@@ -167,29 +170,31 @@ if __name__ == '__main__':
 
     train_dataset = TensorDataset(data_tensor=x_train, target_tensor=y_train)
     test_dataset = TensorDataset(data_tensor=x_valid, target_tensor=y_valid)
-    train_loader = DataLoader(train_dataset, batch_size=100,shuffle=True, num_workers=4)
-    test_dataset = DataLoader(test_dataset, batch_size=100, num_workers=4)
+    train_loader = DataLoader(train_dataset, batch_size=1000,shuffle=True, num_workers=4,pin_memory=True)
+    # test_dataset = DataLoader(test_dataset, batch_size=100, num_workers=4)
 
     # train_dataloader = DataLoader()
 
     fullNet = nn.Sequential(
         nn.BatchNorm1d(10),
-        nn.Linear(10,20),
+        nn.Linear(10,50),
         nn.PReLU(),
-        nn.BatchNorm1d(20),
-        nn.Linear(20,20),
+        # nn.BatchNorm1d(50),
+        nn.Linear(50,50),
         nn.PReLU(),
-        nn.BatchNorm1d(20),
-        nn.Linear(20,20),
+        # nn.BatchNorm1d(50),
+        nn.Linear(50,50),
         nn.PReLU(),
-        nn.BatchNorm1d(20),
-        nn.Linear(20,20),
+        # nn.BatchNorm1d(50),
+        nn.Linear(50,20),
         nn.PReLU(),
-        nn.BatchNorm1d(20),
+        # nn.BatchNorm1d(20),
         nn.Linear(20,10),
-        nn.PReLU(),
+        nn.Softmax(),
         nn.Linear(10,2)
     )
+
+
     fullNet.cuda()
     print(fullNet)
 
@@ -198,10 +203,11 @@ if __name__ == '__main__':
     x_test = Variable(x_valid).cuda()
     y_test = Variable(y_valid).cuda()
 
-    optimization = torch.optim.SGD(fullNet.parameters(),momentum=0.01,lr=0.0001)
+    optimization = torch.optim.SGD(fullNet.parameters(),momentum=0.0001,lr=0.0001)
     # optimization = torch.optim.Adam(fullNet.parameters())
     loss_func = torch.nn.SmoothL1Loss()
     # loss_func = own_loss_function()
+    # nn.init.xavier_uniform(fullNet.parameters())
     running_loss = 0.0
     for epoch in range(100):
 
@@ -217,7 +223,7 @@ if __name__ == '__main__':
             optimization.step()
 
             running_loss += loss.data[0]
-            if step % 200 == 199:
+            if step % 20 == 19:
                 print('%d,%5d] loss: %.3f' % (epoch + 1, step + 1, running_loss / 200))
                 logger.scalar_summary('loss', running_loss / 200, step + epoch * 7600)
                 running_loss = 0.0
@@ -229,7 +235,20 @@ if __name__ == '__main__':
                 np.savetxt('y.txt',y_test.data.cpu().numpy())
 
                 error_average = (((pred_test-y_test))).abs().mean()
+
                 # print(error_average.float().cpu()[0].numpy())
                 logger.scalar_summary('error_avg',error_average.data.cpu().numpy()[0],step+epoch*7600)
                 print('error avg:',error_average.data.cpu().numpy()[0])
+
+                tmp_y = y_test.data.cpu().numpy()
+                tmp_y_pred = pred_test.data.cpu().numpy()
+
+                tmp_y = (tmp_y*y_src_std)+y_src_mean
+                tmp_y_pred = (tmp_y_pred*y_src_std)+y_src_mean
+
+                pred_error = np.mean(np.abs((tmp_y-tmp_y_pred)/tmp_y))
+                np.savetxt('tmp_y_src.txt',tmp_y_pred)
+                np.savetxt('y_src.txt',tmp_y)
+                print('pred_error:',pred_error)
+                logger.scalar_summary('pred_error',pred_error,step+epoch*7600)
 

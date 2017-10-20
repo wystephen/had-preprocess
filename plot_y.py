@@ -28,13 +28,13 @@ import scipy as sp
 import matplotlib.pyplot as plt
 
 if __name__ == '__main__':
-    pre_y = np.loadtxt('tmp_y.txt')
-    y = np.loadtxt('y.txt')
+    pre_y = np.loadtxt('tmp_y_src.txt')
+    y = np.loadtxt('y_src.txt')
     plt.figure()
 
     for i in range(y.shape[1]):
         plt.plot((pre_y[:, i] - y[:, i]), '-*', label=str(i) + 'pre')
-        print(i, ':', (np.abs(pre_y[:, i] - y[:, i]) / y[:, i]).mean())
+        print(i, ':', (np.abs(pre_y[:, i] - y[:, i]) / np.abs(y[:, i])).mean())
     # plt.plot(y[:,i],'-+',label=str(i)+'y')
     plt.grid()
     plt.legend()

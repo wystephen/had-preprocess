@@ -198,9 +198,9 @@ if __name__ == '__main__':
     x_test = Variable(x_valid).cuda()
     y_test = Variable(y_valid).cuda()
 
-    # optimization = torch.optim.SGD(fullNet.parameters(),lr=0.001)
-    optimization = torch.optim.Adam(fullNet.parameters())
-    loss_func = torch.nn.MSELoss()
+    optimization = torch.optim.SGD(fullNet.parameters(),momentum=0.01,lr=0.0001)
+    # optimization = torch.optim.Adam(fullNet.parameters())
+    loss_func = torch.nn.SmoothL1Loss()
     # loss_func = own_loss_function()
     running_loss = 0.0
     for epoch in range(100):
@@ -228,7 +228,7 @@ if __name__ == '__main__':
                 np.savetxt('tmp_y.txt',pred_test.data.cpu().numpy())
                 np.savetxt('y.txt',y_test.data.cpu().numpy())
 
-                error_average = (((pred_test-y_test)/y_test)).abs().mean()
+                error_average = (((pred_test-y_test))).abs().mean()
                 # print(error_average.float().cpu()[0].numpy())
                 logger.scalar_summary('error_avg',error_average.data.cpu().numpy()[0],step+epoch*7600)
                 print('error avg:',error_average.data.cpu().numpy()[0])

@@ -177,15 +177,15 @@ if __name__ == '__main__':
 
     fullNet = nn.Sequential(
         # nn.BatchNorm1d(10),
-        nn.Linear(10,20),
+        nn.Linear(10,30),
         nn.PReLU(),
         nn.Dropout(),
         # nn.BatchNorm1d(20),
-        nn.Linear(20,20),
+        nn.Linear(30,30),
         nn.ELU(),
         nn.Dropout(),
         # nn.BatchNorm1d(20),
-        nn.Linear(20,20),
+        nn.Linear(30,20),
         # nn.Tanh(),
         nn.SELU(),
         # nn.PReLU(),
@@ -194,7 +194,7 @@ if __name__ == '__main__':
         nn.Linear(20,20),
         nn.SELU(),
         # nn.Dropout(),
-        nn.BatchNorm1d(20),
+        # nn.BatchNorm1d(20),
         nn.Linear(20,20),
         nn.SELU(),
         nn.Linear(20,2),
@@ -226,7 +226,7 @@ if __name__ == '__main__':
     # nn.init.xavier_uniform(fullNet.fc4.weight)
     def weights_init(m):
         if isinstance(m,nn.Linear):
-            nn.init.xavier_uniform(m.weight,gain=nn.init.calculate_gain('linear'))
+            nn.init.xavier_uniform(m.weight.data,gain=nn.init.calculate_gain('linear'))
             # nn.init.xavier_normal(m.bias)
 
     fullNet.apply(weights_init)
@@ -244,7 +244,8 @@ if __name__ == '__main__':
 
     # optimization = torch.optim.SGD(fullNet.parameters(),momentum=0.005,lr=0.001)
     optimization = torch.optim.Adam(fullNet.parameters(),lr=0.005)
-    loss_func = torch.nn.MSELoss()
+    # loss_func = torch.nn.MSELoss()
+    loss_func = torch.nn.SmoothL1Loss()
     # loss_func = own_loss_function()
     # nn.init.xavier_uniform(fullNet.parameters())
     running_loss = 0.0

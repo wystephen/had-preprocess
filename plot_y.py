@@ -40,4 +40,11 @@ if __name__ == '__main__':
     # plt.plot(y[:,i],'-+',label=str(i)+'y')
     plt.grid()
     plt.legend()
+
+    plt.figure()
+    for i in range(y.shape[1]):
+        plt.plot(np.abs(pre_y[:,i]-y[:,i]),label=str(i)+'err')
+    plt.grid()
+    plt.legend()
+
     plt.show()

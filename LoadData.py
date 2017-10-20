@@ -244,8 +244,8 @@ if __name__ == '__main__':
 
     # optimization = torch.optim.SGD(fullNet.parameters(),momentum=0.005,lr=0.001)
     optimization = torch.optim.Adam(fullNet.parameters(),lr=0.005)
-    # loss_func = torch.nn.MSELoss()
-    loss_func = torch.nn.SmoothL1Loss()
+    loss_func = torch.nn.MSELoss()
+    # loss_func = torch.nn.SmoothL1Loss()
     # loss_func = own_loss_function()
     # nn.init.xavier_uniform(fullNet.parameters())
     running_loss = 0.0

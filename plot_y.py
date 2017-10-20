@@ -33,8 +33,10 @@ if __name__ == '__main__':
     plt.figure()
 
     for i in range(y.shape[1]):
-        plt.plot((pre_y[:, i] - y[:, i]), '-*', label=str(i) + 'pre')
-        print(i, ':', (np.abs(pre_y[:, i] - y[:, i]) / np.abs(y[:, i])).mean())
+        # plt.plot((pre_y[:, i] - y[:, i]), '-*', label=str(i) + 'pre')
+        plt.plot(pre_y[:,i],'.',label=str(i)+'pre')
+        plt.plot(y[:,i],'-',label=str(i))
+        print(i, ':', (np.abs(pre_y[:, i] - y[:, i])/np.abs(y[:,i]) ).mean())
     # plt.plot(y[:,i],'-+',label=str(i)+'y')
     plt.grid()
     plt.legend()

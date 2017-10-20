@@ -175,41 +175,80 @@ if __name__ == '__main__':
 
     # train_dataloader = DataLoader()
 
+    # fullNet = nn.Sequential(
+    #     nn.BatchNorm1d(10),
+    #     nn.Linear(10,20),
+    #     nn.PReLU(),
+    #     nn.Dropout(),
+    #     nn.BatchNorm1d(20),
+    #     nn.Linear(20,20),
+    #     nn.Tanh(),
+    #     nn.Dropout(),
+    #     nn.BatchNorm1d(20),
+    #     nn.Linear(20,20),
+    #     nn.Tanh(),
+    #     # nn.PReLU(),
+    #     # nn.Dropout(),
+    #     # nn.BatchNorm1d(50),
+    #     # nn.Linear(20,20),
+    #     # nn.PReLU(),
+    #     # nn.Dropout(),
+    #     nn.BatchNorm1d(20),
+    #     nn.Linear(20,20),
+    #     nn.Tanh(),
+    #     nn.Linear(20,2),
+    #     nn.Tanh()
+    # )
+    from collections import OrderedDict
     fullNet = nn.Sequential(
-        nn.BatchNorm1d(10),
-        nn.Linear(10,50),
-        nn.PReLU(),
-        # nn.BatchNorm1d(50),
-        nn.Linear(50,50),
-        nn.PReLU(),
-        # nn.BatchNorm1d(50),
-        nn.Linear(50,50),
-        nn.PReLU(),
-        # nn.BatchNorm1d(50),
-        nn.Linear(50,20),
-        nn.PReLU(),
-        # nn.BatchNorm1d(20),
-        nn.Linear(20,10),
-        nn.Softmax(),
-        nn.Linear(10,2)
+        OrderedDict([
+            ('bn1',nn.BatchNorm1d(10)),
+            ('fc1',nn.Linear(10,30)),
+            ('af1',nn.Tanh()),
+            ('dp1',nn.Dropout()),
+            ('bn2',nn.BatchNorm1d(30)),
+            ('fc2',nn.Linear(30,30)),
+            ('af2',nn.Tanh()),
+            ('dp2',nn.Dropout()),
+            ('bn3',nn.BatchNorm1d(30)),
+            ('fc3',nn.Linear(30,30)),
+            ('af3',nn.Tanh()),
+            ('fc4',nn.Linear(30,2))
+
+        ])
+
     )
+
+    # nn.init.xavier_uniform(fullNet.fc1.weight)
+    # nn.init.xavier_uniform(fullNet.fc2.weight)
+    # nn.init.xavier_uniform(fullNet.fc3.weight)
+    # nn.init.xavier_uniform(fullNet.fc4.weight)
+    def weights_init(m):
+        if isinstance(m,nn.Linear):
+            nn.init.xavier_normal(m.weight)
+            nn.init.xavier_normal()
+
+
 
 
     fullNet.cuda()
+    fullNet.train()
     print(fullNet)
+    print(fullNet.parameters())
 
     # x_test = torch.from_numpy(x_valid).float()
     # y_test = torch.from_numpy(y_valid).float()
     x_test = Variable(x_valid).cuda()
     y_test = Variable(y_valid).cuda()
 
-    optimization = torch.optim.SGD(fullNet.parameters(),momentum=0.0001,lr=0.0001)
-    # optimization = torch.optim.Adam(fullNet.parameters())
-    loss_func = torch.nn.SmoothL1Loss()
+    # optimization = torch.optim.SGD(fullNet.parameters(),momentum=0.005,lr=0.001)
+    optimization = torch.optim.Adam(fullNet.parameters())
+    loss_func = torch.nn.MSELoss()
     # loss_func = own_loss_function()
     # nn.init.xavier_uniform(fullNet.parameters())
     running_loss = 0.0
-    for epoch in range(100):
+    run_loss_count  = 0
+    for epoch in range(1000):
 
         print('Epoch:', epoch)
         for step, (bx, by) in enumerate(train_loader):
@@ -223,10 +262,12 @@ if __name__ == '__main__':
             optimization.step()
 
             running_loss += loss.data[0]
-            if step % 20 == 19:
-                print('%d,%5d] loss: %.3f' % (epoch + 1, step + 1, running_loss / 200))
-                logger.scalar_summary('loss', running_loss / 200, step + epoch * 7600)
+            run_loss_count += 1
+            if step % 200 == 1:
+                print('[%d,%5d] loss: %.3f' % (epoch + 1, step + 1, running_loss / float(run_loss_count)))
+                logger.scalar_summary('loss', running_loss / float(run_loss_count), step + epoch * 7600)
                 running_loss = 0.0
+                run_loss_count = 0
                 pred_test = fullNet(x_test)
                 score = loss_func(pred_test, y_test)
                 logger.scalar_summary('score', score.data[0], step + epoch * 7600)
@@ -247,6 +288,8 @@ if __name__ == '__main__':
                 tmp_y_pred = (tmp_y_pred*y_src_std)+y_src_mean
 
                 pred_error = np.mean(np.abs((tmp_y-tmp_y_pred)/tmp_y))
+                print('predicted y std:',tmp_y_pred.std(axis=0))
+                print('y_src std:',tmp_y.std(axis=0))
                 np.savetxt('tmp_y_src.txt',tmp_y_pred)
                 np.savetxt('y_src.txt',tmp_y)
                 print('pred_error:',pred_error)

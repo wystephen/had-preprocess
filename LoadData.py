@@ -175,49 +175,49 @@ if __name__ == '__main__':
 
     # train_dataloader = DataLoader()
 
-    # fullNet = nn.Sequential(
-    #     nn.BatchNorm1d(10),
-    #     nn.Linear(10,20),
-    #     nn.PReLU(),
-    #     nn.Dropout(),
-    #     nn.BatchNorm1d(20),
-    #     nn.Linear(20,20),
-    #     nn.Tanh(),
-    #     nn.Dropout(),
-    #     nn.BatchNorm1d(20),
-    #     nn.Linear(20,20),
-    #     nn.Tanh(),
-    #     # nn.PReLU(),
-    #     # nn.Dropout(),
-    #     # nn.BatchNorm1d(50),
-    #     # nn.Linear(20,20),
-    #     # nn.PReLU(),
-    #     # nn.Dropout(),
-    #     nn.BatchNorm1d(20),
-    #     nn.Linear(20,20),
-    #     nn.Tanh(),
-    #     nn.Linear(20,2),
-    #     nn.Tanh()
-    # )
-    from collections import OrderedDict
     fullNet = nn.Sequential(
-        OrderedDict([
-            ('bn1',nn.BatchNorm1d(10)),
-            ('fc1',nn.Linear(10,30)),
-            ('af1',nn.Tanh()),
-            ('dp1',nn.Dropout()),
-            ('bn2',nn.BatchNorm1d(30)),
-            ('fc2',nn.Linear(30,30)),
-            ('af2',nn.Tanh()),
-            ('dp2',nn.Dropout()),
-            ('bn3',nn.BatchNorm1d(30)),
-            ('fc3',nn.Linear(30,30)),
-            ('af3',nn.Tanh()),
-            ('fc4',nn.Linear(30,2))
-
-        ])
-
+        nn.BatchNorm1d(10),
+        nn.Linear(10,20),
+        nn.PReLU(),
+        nn.Dropout(),
+        nn.BatchNorm1d(20),
+        nn.Linear(20,20),
+        nn.Tanh(),
+        nn.Dropout(),
+        nn.BatchNorm1d(20),
+        nn.Linear(20,20),
+        nn.Tanh(),
+        # nn.PReLU(),
+        nn.Dropout(),
+        nn.BatchNorm1d(20),
+        nn.Linear(20,20),
+        nn.PReLU(),
+        # nn.Dropout(),
+        nn.BatchNorm1d(20),
+        nn.Linear(20,20),
+        nn.Tanh(),
+        nn.Linear(20,2),
+        nn.Tanh()
     )
+    # from collections import OrderedDict
+    # fullNet = nn.Sequential(
+    #     OrderedDict([
+    #         ('bn1',nn.BatchNorm1d(10)),
+    #         ('fc1',nn.Linear(10,30)),
+    #         ('af1',nn.Tanh()),
+    #         ('dp1',nn.Dropout()),
+    #         ('bn2',nn.BatchNorm1d(30)),
+    #         ('fc2',nn.Linear(30,30)),
+    #         ('af2',nn.Tanh()),
+    #         ('dp2',nn.Dropout()),
+    #         ('bn3',nn.BatchNorm1d(30)),
+    #         ('fc3',nn.Linear(30,30)),
+    #         ('af3',nn.Tanh()),
+    #         ('fc4',nn.Linear(30,2))
+    #
+    #     ])
+    #
+    # )
 
     # nn.init.xavier_uniform(fullNet.fc1.weight)
     # nn.init.xavier_uniform(fullNet.fc2.weight)
@@ -225,10 +225,10 @@ if __name__ == '__main__':
     # nn.init.xavier_uniform(fullNet.fc4.weight)
     def weights_init(m):
         if isinstance(m,nn.Linear):
-            nn.init.xavier_normal(m.weight)
-            nn.init.xavier_normal()
+            nn.init.xavier_uniform(m.weight,gain=nn.init.calculate_gain('linear'))
+            # nn.init.xavier_normal(m.bias)
 
-
+    fullNet.apply(weights_init)
 
 
     fullNet.cuda()

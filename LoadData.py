@@ -176,28 +176,29 @@ if __name__ == '__main__':
     # train_dataloader = DataLoader()
 
     fullNet = nn.Sequential(
-        nn.BatchNorm1d(10),
+        # nn.BatchNorm1d(10),
         nn.Linear(10,20),
         nn.PReLU(),
         nn.Dropout(),
-        nn.BatchNorm1d(20),
+        # nn.BatchNorm1d(20),
         nn.Linear(20,20),
-        nn.Tanh(),
+        nn.ELU(),
         nn.Dropout(),
-        nn.BatchNorm1d(20),
+        # nn.BatchNorm1d(20),
         nn.Linear(20,20),
-        nn.Tanh(),
+        # nn.Tanh(),
+        nn.SELU(),
         # nn.PReLU(),
         nn.Dropout(),
-        nn.BatchNorm1d(20),
+        # nn.BatchNorm1d(20),
         nn.Linear(20,20),
-        nn.PReLU(),
+        nn.SELU(),
         # nn.Dropout(),
         nn.BatchNorm1d(20),
         nn.Linear(20,20),
-        nn.Tanh(),
+        nn.SELU(),
         nn.Linear(20,2),
-        nn.Tanh()
+        # nn.Tanh()
     )
     # from collections import OrderedDict
     # fullNet = nn.Sequential(
@@ -242,7 +243,7 @@ if __name__ == '__main__':
     y_test = Variable(y_valid).cuda()
 
     # optimization = torch.optim.SGD(fullNet.parameters(),momentum=0.005,lr=0.001)
-    optimization = torch.optim.Adam(fullNet.parameters())
+    optimization = torch.optim.Adam(fullNet.parameters(),lr=0.005)
     loss_func = torch.nn.MSELoss()
     # loss_func = own_loss_function()
     # nn.init.xavier_uniform(fullNet.parameters())

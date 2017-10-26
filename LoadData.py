@@ -112,8 +112,9 @@ class Neuralnetwork(nn.Module):
         return x
 
 
-def own_loss_function(pre_y,y):
+def own_loss_function(pre_y, y):
     return (((pre_y - y) / y)).abs().mean()
+
 
 if __name__ == '__main__':
 
@@ -121,7 +122,8 @@ if __name__ == '__main__':
     initial logger
     '''
     import time
-    logger = Logger('./logs'+ time.strftime("%Y-%m-%d-%H:%M:%S",time.localtime())+'/')
+
+    logger = Logger('./logs' + time.strftime("%Y-%m-%d-%H:%M:%S", time.localtime()) + '/')
 
     dir_name = '/home/steve/Data/Shad/'
 
@@ -148,8 +150,16 @@ if __name__ == '__main__':
     print('x', x[10, :])
     print('y', y[10, :])
 
-    x = preprocessing.scale(x)
-    y = preprocessing.scale(y)
+    # x = preprocessing.scale(x)
+    # y = preprocessing.scale(y)
+
+    x_min = np.min(x, axis=0)
+    x_max = np.max(x, axis=0)
+    y_min = np.min(y, axis=0)
+    y_max = np.max(y, axis=0)
+    x = (x-x_min)/(x_max-x_min)-0.5
+    y = (y-y_min)/(y_max-y_min)-0.5
+
 
     x_train, x_valid, y_train, y_valid = train_test_split(x, y, test_size=0.2)
 
@@ -158,10 +168,10 @@ if __name__ == '__main__':
 
     print(x_train.shape, x_valid.shape, y_train.shape, y_valid.shape)
 
-    print('x mean:',x.mean(axis=0))
-    print('x std:',x.std(axis=0))
-    print('y mean:',y.mean(axis=0))
-    print('y std:',y.std(axis=0))
+    print('x mean:', x.mean(axis=0))
+    print('x std:', x.std(axis=0))
+    print('y mean:', y.mean(axis=0))
+    print('y std:', y.std(axis=0))
 
     x_train = torch.from_numpy(x_train).float()
     x_valid = torch.from_numpy(x_valid).float()
@@ -170,36 +180,38 @@ if __name__ == '__main__':
 
     train_dataset = TensorDataset(data_tensor=x_train, target_tensor=y_train)
     test_dataset = TensorDataset(data_tensor=x_valid, target_tensor=y_valid)
-    train_loader = DataLoader(train_dataset, batch_size=1000,shuffle=True, num_workers=4,pin_memory=True)
+    train_loader = DataLoader(train_dataset, batch_size=1000, shuffle=True, num_workers=4, pin_memory=True)
     # test_dataset = DataLoader(test_dataset, batch_size=100, num_workers=4)
 
     # train_dataloader = DataLoader()
 
     fullNet = nn.Sequential(
         # nn.BatchNorm1d(10),
-        nn.Linear(10,30),
+        nn.Linear(10, 30),
         nn.PReLU(),
         nn.Dropout(),
         # nn.BatchNorm1d(20),
-        nn.Linear(30,30),
+        nn.Linear(30, 30),
         nn.ELU(),
         nn.Dropout(),
         # nn.BatchNorm1d(20),
-        nn.Linear(30,20),
+        nn.Linear(30, 20),
         # nn.Tanh(),
         nn.SELU(),
         # nn.PReLU(),
         nn.Dropout(),
         # nn.BatchNorm1d(20),
-        nn.Linear(20,20),
+        nn.Linear(20, 20),
         nn.SELU(),
         # nn.Dropout(),
         # nn.BatchNorm1d(20),
-        nn.Linear(20,20),
+        nn.Linear(20, 20),
         nn.SELU(),
-        nn.Linear(20,2),
+        nn.Linear(20, 2),
         # nn.Tanh()
     )
+
+
     # from collections import OrderedDict
     # fullNet = nn.Sequential(
     #     OrderedDict([
@@ -225,12 +237,12 @@ if __name__ == '__main__':
     # nn.init.xavier_uniform(fullNet.fc3.weight)
     # nn.init.xavier_uniform(fullNet.fc4.weight)
     def weights_init(m):
-        if isinstance(m,nn.Linear):
-            nn.init.xavier_uniform(m.weight.data,gain=nn.init.calculate_gain('linear'))
+        if isinstance(m, nn.Linear):
+            nn.init.xavier_uniform(m.weight.data, gain=nn.init.calculate_gain('linear'))
             # nn.init.xavier_normal(m.bias)
 
-    fullNet.apply(weights_init)
 
+    fullNet.apply(weights_init)
 
     fullNet.cuda()
     fullNet.train()
@@ -243,13 +255,13 @@ if __name__ == '__main__':
     y_test = Variable(y_valid).cuda()
 
     # optimization = torch.optim.SGD(fullNet.parameters(),momentum=0.005,lr=0.001)
-    optimization = torch.optim.Adam(fullNet.parameters(),lr=0.005)
+    optimization = torch.optim.Adam(fullNet.parameters(), lr=0.005)
     loss_func = torch.nn.MSELoss()
     # loss_func = torch.nn.SmoothL1Loss()
     # loss_func = own_loss_function()
     # nn.init.xavier_uniform(fullNet.parameters())
     running_loss = 0.0
-    run_loss_count  = 0
+    run_loss_count = 0
     for epoch in range(1000):
 
         print('Epoch:', epoch)
@@ -274,26 +286,28 @@ if __name__ == '__main__':
                 score = loss_func(pred_test, y_test)
                 logger.scalar_summary('score', score.data[0], step + epoch * 7600)
 
-                np.savetxt('tmp_y.txt',pred_test.data.cpu().numpy())
-                np.savetxt('y.txt',y_test.data.cpu().numpy())
+                np.savetxt('tmp_y.txt', pred_test.data.cpu().numpy())
+                np.savetxt('y.txt', y_test.data.cpu().numpy())
 
-                error_average = (((pred_test-y_test))).abs().mean()
+                error_average = (((pred_test - y_test))).abs().mean()
 
                 # print(error_average.float().cpu()[0].numpy())
-                logger.scalar_summary('error_avg',error_average.data.cpu().numpy()[0],step+epoch*7600)
-                print('error avg:',error_average.data.cpu().numpy()[0])
+                logger.scalar_summary('error_avg', error_average.data.cpu().numpy()[0], step + epoch * 7600)
+                print('error avg:', error_average.data.cpu().numpy()[0])
 
                 tmp_y = y_test.data.cpu().numpy()
                 tmp_y_pred = pred_test.data.cpu().numpy()
 
-                tmp_y = (tmp_y*y_src_std)+y_src_mean
-                tmp_y_pred = (tmp_y_pred*y_src_std)+y_src_mean
+                # tmp_y = (tmp_y * y_src_std) + y_src_mean
+                # tmp_y_pred = (tmp_y_pred * y_src_std) + y_src_mean
+                tmp_y = (tmp_y+0.5)*(y_max-y_min)+y_min
+                tmp_y_pred = (tmp_y_pred+0.5)*(y_max-y_min)+y_min
 
-                pred_error = np.mean(np.abs((tmp_y-tmp_y_pred)/tmp_y))
-                print('predicted y std:',tmp_y_pred.std(axis=0))
-                print('y_src std:',tmp_y.std(axis=0))
-                np.savetxt('tmp_y_src.txt',tmp_y_pred)
-                np.savetxt('y_src.txt',tmp_y)
-                print('pred_error:',pred_error)
-                logger.scalar_summary('pred_error',pred_error,step+epoch*7600)
 
+                pred_error = np.mean(np.abs((tmp_y - tmp_y_pred) / tmp_y))
+                print('predicted y std:', tmp_y_pred.std(axis=0))
+                print('y_src std:', tmp_y.std(axis=0))
+                np.savetxt('tmp_y_src.txt', tmp_y_pred)
+                np.savetxt('y_src.txt', tmp_y)
+                print('pred_error:', pred_error)
+                logger.scalar_summary('pred_error', pred_error, step + epoch * 7600)
